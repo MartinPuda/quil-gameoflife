@@ -1,6 +1,6 @@
 # quil-gameoflife
 
-Created 4. 4. 2021
+Created 4. 7. 2021
 
 A Quil sketch. Conway's Game of Life.
 
