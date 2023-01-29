@@ -1,13 +1,18 @@
 (ns quil-gameoflife.core
-  (:require [quil.core :as q]
-            [quil.middleware :as m]))
+  (:require
+    [quil.core :as q]
+    [quil.middleware :as m]))
 
 ; Quil Game of Life
 ; created 4. 7. 2021
 ; updated 28. 12. 2021
+; updated 29. 1. 2023
 
-; Coordinates for initial image, will be filled
-;written as [y x], starting with [0 0] from left top
+(def initial-grid
+  (->> (repeat 50 0)
+       (repeat 50)
+       (mapv vec)))
+
 (def image-cords
   [[5 1] [5 2] [6 1] [6 2]
    [5 11] [6 11] [7 11]
@@ -33,30 +38,23 @@
 (defn setup []
   (q/frame-rate 30)
   (q/color-mode :rgb)
-  ;Setup function returns initial state. It contains 50x50 matrix.
-  ;Some fields are filled with 1, based on coordinates.
   (reduce #(assoc-in %1 %2 1)
-          (vec (repeat 50 (vec (repeat 50 0))))
+          initial-grid
           image-cords))
 
-(defn change-cell
-  "State of cell with coordinates [y x] is changed according to the rules.
-  Args:
-  m is 50x50 matrix
-  y,x are coordinates to check"
-  [m y x]
-  (let [alive-sum
-        (apply + (for [[y-diff x-diff] cords]
-                   (get-in m [(+ y y-diff) (+ x x-diff)] 0)))]
-    (case alive-sum
-      (0 1) 0
-      2 (get-in m [y x])
-      3 1
-      0)))
+(defn alive-sum [state y x]
+  (->> (for [[y-diff x-diff] cords]
+         (get-in state [(+ y y-diff) (+ x x-diff)] 0))
+       (reduce +)))
 
-(defn update-state
-  "Each cell in matrix is updated."
-  [state]
+(defn change-cell [state y x]
+  (case (alive-sum state y x)
+    (0 1) 0
+    2 (get-in state [y x])
+    3 1
+    0))
+
+(defn update-state [state]
   (->> (for [y (range 50)]
          (for [x (range 50)]
            (change-cell state y x)))
@@ -69,7 +67,7 @@
   (q/fill 0 255 0)
   (doseq [y (range 50)
           x (range 50)]
-    (if (= (get-in state [y x]) 0)
+    (if (zero? (get-in state [y x]))
       (q/fill 0 0 0)
       (q/fill 0 255 0))
     (q/rect (* x 10) (* y 10) 10 10)))
